@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" type="text/css" href="css/mystyle.css">
+</head>
+<body>
+<h1>Hangman</h1>
+
+<p id="charSet"></p>
+
+<input id="guessInput" name="guessChar" autofocus autocomplete="off" type="text" size="15" maxlength="1">
+<input id="guessButton" name="guessAct" type="button" value="Guess" onClick="guessClick()">
+
+<p id="wrongs">Wrong Letters:</p>
+<img src="http://www.writteninpencil.de/Projekte/Hangman/hangman0.png" id="hangman"><br/>
+<input name="refresh" type="button" value="New Game" onClick=location.reload()>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+<script src="js/myScript.js"></script>
+</body>
+</html>
