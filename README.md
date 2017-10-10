@@ -22,4 +22,5 @@ Open as a Java project and run the src/main/HangmanApplication with two argument
 Or install maven and run “mvn clean package” in the root folder where pom.xml resides to get jar file in target folder, then put jar file and hangman.yml in the same folder and run “java -cp hangman-1.0-SNAPSHOT.jar main.HangmanApplication server hangman.yml”
 
 How to play:
+
 After running, enter http://localhost:8080 in browser, and have fun
