@@ -1,5 +1,5 @@
 # hangman
-hangman game implemented by Dropwizard and JQuery
+hangman game implemented with Dropwizard and JQuery
 
 For the html, css and hangman image, I used and modified templates from codePen
 
