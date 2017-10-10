@@ -2,11 +2,17 @@
 hangman game implemented by Dropwizard and JQuery
 
 For the html, css and hangman image, I used and modified templates from codePen
+
 For Js, I mainly used JQuery. Implemented features to improve user experience like auto focus, auto clean input field and bind enter key with guess button
+
 Used Jetty as embeded web container to save the trouble for clients to run the program
+
 Used Json to deal with data
+
 Used memCached to save the trouble configuring database
+
 Used yml file for configuration
+
 Java Coding style: https://google.github.io/styleguide/javaguide.html
 
 How to run:
