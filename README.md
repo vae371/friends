@@ -1,6 +1,8 @@
 # hangman
 hangman game implemented with Dropwizard and JQuery
 
+Included webster dictionary in /resources
+
 For the html, css and hangman image, I used and modified templates from codePen
 
 For Js, I mainly used JQuery. Implemented features to improve user experience like auto focus, auto clean input field and bind enter key with guess button
