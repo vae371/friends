@@ -1,7 +1,7 @@
 # hangman
 hangman game implemented with Dropwizard and JQuery
 
-Included webster dictionary in src/resources
+Included webster dictionary in src/main/resources
 
 For the html, css and hangman image, I used and modified templates from codePen
 
