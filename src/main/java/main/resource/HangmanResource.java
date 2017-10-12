@@ -9,59 +9,83 @@ import net.spy.memcached.MemcachedClient;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Path("/hangman")
 public class HangmanResource {
     static MemcachedClient memcachedClient;
-    List<String> wordList;
+    static List<String> wordList;
     Random random = new Random();
     ObjectMapper objectMapper = new ObjectMapper();
 
-    public HangmanResource(String memcacheServerIp, int memcacheServerPort, String words) throws IOException {
+    public HangmanResource(String memcacheServerIp, int memcacheServerPort, String dictonaryPath) {
+        // singleton pattern for cache connection and word list
         if (memcachedClient == null) {
-            memcachedClient = new MemcachedClient(new InetSocketAddress[]{new InetSocketAddress(memcacheServerIp, memcacheServerPort)});
+            try {
+                memcachedClient = new MemcachedClient(new InetSocketAddress[]{new InetSocketAddress(memcacheServerIp, memcacheServerPort)});
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-        wordList = Arrays.asList(words.toLowerCase().split(" "));
+
+        if (wordList == null) {
+            // load txt file inside jar and only allow words with length in range 3-4 to reduce game difficulty
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(this.getClass().getResourceAsStream(dictonaryPath)))) {
+                wordList = br.lines().filter(s -> s.matches("[a-zA-Z]+") && s.length() > 2 && s.length() < 5).collect(Collectors.toList());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @POST
     @Path("/guess")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public ObjectNode guess(ObjectNode requestBody) throws IOException {
-        // data from http request body
+    public ObjectNode guess(ObjectNode requestBody) {
         String uuid = requestBody.get("uuid").textValue();
-        char guess = requestBody.get("guess").textValue().charAt(0);
 
-        // retrieve data from cache
-        //TODO check null
-        ObjectNode objectNode = (ObjectNode) objectMapper.readTree((byte[]) memcachedClient.get(uuid));
+        // retrieve from cache
+        ObjectNode objectNode = null;
+        try {
+            objectNode = (ObjectNode) objectMapper.readTree((byte[]) memcachedClient.get(uuid));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String word = objectNode.get("word").textValue();
+        String wrongs = objectNode.get("wrongs").textValue();
+        ArrayNode rightLetters = (ArrayNode) objectNode.get("rightLetters");
 
-        // already game over?
-        if (!objectNode.get("hasWin").isNull()) {
+        // game over?
+        if (!objectNode.get("result").isNull()) {
             return objectNode;
         }
 
-        String word = objectNode.get("word").textValue();
-        String wrongs = objectNode.get("wrongs").textValue();
-        ArrayNode guessFiled = (ArrayNode) objectNode.get("guessFiled");
-
-        // game logic
-        boolean allComplete = true;
+        boolean hasWin = true;
         boolean guessRight = false;
+        char guess = requestBody.get("guess").textValue().charAt(0);
+
+        // compute if guess is right and if user has won
         for (int i = 0; i < word.length(); i++) {
             if (word.charAt(i) == guess) {
-                guessFiled.set(i, new TextNode(guess + ""));
+                rightLetters.set(i, new TextNode(guess + ""));
                 guessRight = true;
             }
-            if (guessFiled.get(i).textValue().equals("_ ")) {
-                allComplete = false;
+            if (rightLetters.get(i).textValue().equals("_ ")) {
+                hasWin = false;
             }
         }
 
@@ -70,39 +94,55 @@ public class HangmanResource {
             objectNode.put("wrongs", wrongs);
         }
 
-        if (wrongs.length() == 6) {
-            objectNode.put("hasWin", false);
-        }
-        if (allComplete) {
-            objectNode.put("hasWin", true);
+        if (hasWin) {
+            objectNode.put("result", 1);
         }
 
-        // save to cache
-        memcachedClient.set(uuid, 60 * 60, objectMapper.writeValueAsBytes(objectNode));
+        if (wrongs.length() == 10) {
+            objectNode.put("result", 2);
+        }
 
+        // save
+        try {
+            memcachedClient.set(uuid, 60 * 60, objectMapper.writeValueAsBytes(objectNode));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+
+        // word will not be included in response to avoid cheating
         objectNode.remove("word");
         return objectNode;
+    }
+
+    public void init(String uuid, String word) {
+        String wrongs = "";
+
+        ArrayNode rightLetters = objectMapper.createArrayNode();
+        for (int i = 0; i < word.length(); i++) {
+            rightLetters.add("_ ");
+        }
+
+        ObjectNode objectNode = objectMapper.createObjectNode();
+        objectNode.put("word", word);
+        objectNode.put("wrongs", wrongs);
+        objectNode.put("rightLetters", rightLetters);
+        objectNode.putNull("result");
+
+        try {
+            memcachedClient.set(uuid, 60 * 60, objectMapper.writeValueAsBytes(objectNode));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
     }
 
     @GET
     @Path("/init")
     public String init() throws JsonProcessingException {
-        // params
         String uuid = UUID.randomUUID().toString();
-        String word = wordList.get(random.nextInt(wordList.size()));
-        String wrongs = "";
-        ArrayNode guessFiled = objectMapper.createArrayNode();
-        for (int i = 0; i < word.length(); i++) {
-            guessFiled.add("_ ");
-        }
+        String randomWord = wordList.get(random.nextInt(wordList.size()));
 
-        // save in cache
-        ObjectNode objectNode = objectMapper.createObjectNode();
-        objectNode.put("word", word);
-        objectNode.put("wrongs", wrongs);
-        objectNode.put("guessFiled", guessFiled);
-        objectNode.putNull("hasWin");
-        memcachedClient.set(uuid, 60 * 60, objectMapper.writeValueAsBytes(objectNode));
+        // link uuid with word and save in cache
+        init(uuid, randomWord);
 
         return uuid;
     }

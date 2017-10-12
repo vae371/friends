@@ -17,5 +17,5 @@ public class HangmanConfiguration extends Configuration {
 
     private int memcacheServerPort;
 
-    private String words;
+    private String dictonaryPath;
 }

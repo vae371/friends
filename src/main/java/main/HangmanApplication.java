@@ -25,7 +25,7 @@ public class HangmanApplication extends Application<HangmanConfiguration> {
     @Override
     public void run(HangmanConfiguration configuration,
                     Environment environment) throws IOException {
-        final HangmanResource resource = new HangmanResource(configuration.getMemcacheServerIp(), configuration.getMemcacheServerPort(), configuration.getWords());
+        final HangmanResource resource = new HangmanResource(configuration.getMemcacheServerIp(), configuration.getMemcacheServerPort(), configuration.getDictonaryPath());
         environment.jersey().register(resource);
         environment.jersey().setUrlPattern("/api/*");
 
