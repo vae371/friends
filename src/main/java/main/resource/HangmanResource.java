@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 
 @Path("/hangman")
 public class HangmanResource {
-    static MemcachedClient memcachedClient;
+    public static MemcachedClient memcachedClient;
     static List<String> wordList;
     Random random = new Random();
     ObjectMapper objectMapper = new ObjectMapper();
