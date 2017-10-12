@@ -1,4 +1,4 @@
-var urlBase = "http://localhost:8080/api";
+var urlBase = "/api";
 var uuid;
 var result;
 var wrongs = "";
