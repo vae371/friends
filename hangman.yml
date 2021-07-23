@@ -1,9 +1,17 @@
 heatlTest: TEST
-memcacheServerIp: 34.205.78.200
-memcacheServerPort: 11211
-dictonaryPath: /webster-dictionary.txt
 
 server:
     applicationConnectors:
         - type: http
-          port: 8080
+          port: 3000
+
+# Database settings.
+database:
+  # the name of the JDBC driver, mysql in our case
+  driverClass: com.mysql.jdbc.Driver
+  # the username
+  user: admin
+  # the password
+  password:
+  # the JDBC URL
+  url: jdbc:mysql://database-2.cxdulvczjbw2.us-east-2.rds.amazonaws.com:3306/db
